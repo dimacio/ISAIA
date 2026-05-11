@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Humanidad</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        main {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #1a252f;
+        }
+
+        /* Ocultar elementos semánticamente */
+        [hidden] {
+            display: none !important;
+        }
+
+        /* Estilos del estado 2 (Captcha) */
+        #cabecera-contador {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+        }
+
+        #contador {
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        #contenedor-captcha {
+            display: block;
+            margin: 0 auto 1.5rem auto;
+            background-color: #fafafa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: transparent;
+        }
+
+        #instrucciones-captcha {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #555;
+            background: #eef2f5;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Estilos del estado 3 (Resultados) */
+        #arte-ascii {
+            font-family: monospace;
+            font-size: 1.2rem;
+            line-height: 1.2;
+            white-space: pre;
+            margin: 2rem auto;
+            color: var(--primary);
+        }
+
+        #mensaje-resultado {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <main id="aplicacion">
+        
+        <!-- Estado 1: Botón de entrada -->
+        <section id="estado-inicio">
+            <h1>Control de Seguridad</h1>
+            <p>Por favor, demuestre que no es un robot para continuar.</p>
+            <button id="btn-entrar">Entrar</button>
+        </section>
+
+        <!-- Estado 2: El Captcha -->
+        <section id="estado-captcha" hidden>
+            <header id="cabecera-contador">
+                Tiempo restante: <output id="contador">60.00</output>s
+            </header>
+            
+            <figure id="contenedor-captcha">
+                <canvas id="lienzo-juego" width="400" height="200"></canvas>
+            </figure>
+            
+            <section id="instrucciones-captcha">
+                <p>Mantén la pelota en equilibrio sobre la barra durante 60 segundos.</p>
+                <p>Usa la <strong>flecha izquierda</strong> para inclinar el lado izquierdo hacia arriba.</p>
+                <p>Usa la <strong>flecha derecha</strong> para inclinar el lado derecho hacia arriba.</p>
+            </section>
+        </section>
+
+        <!-- Estado 3: Resultado Final -->
+        <section id="estado-resultado" hidden>
+            <h2>Análisis Completado</h2>
+            <pre id="arte-ascii"></pre>
+            <p id="mensaje-resultado"></p>
+            <button id="btn-reiniciar">Volver a intentar</button>
+        </section>
+
+    </main>
+
+    <script>
+        // Referencias del DOM
+        const estadoInicio = document.getElementById('estado-inicio');
+        const estadoCaptcha = document.getElementById('estado-captcha');
+        const estadoResultado = document.getElementById('estado-resultado');
+        
+        const btnEntrar = document.getElementById('btn-entrar');
+        const btnReiniciar = document.getElementById('btn-reiniciar');
+        const salidaContador = document.getElementById('contador');
+        
+        const lienzo = document.getElementById('lienzo-juego');
+        const ctx = lienzo.getContext('2d');
+        
+        const arteAscii = document.getElementById('arte-ascii');
+        const mensajeResultado = document.getElementById('mensaje-resultado');
+
+        // Constantes del juego
+        const TIEMPO_INICIAL = 60.00;
+        const LONGITUD_BARRA = 300;
+        const RADIO_PELOTA = 12;
+        const GRAVEDAD = 400; // Píxeles por segundo al cuadrado
+        const VELOCIDAD_ROTACION = 120; // Grados por segundo
+        const FRICCION = 0.99; // Factor de amortiguación
+        const ANGULO_MAXIMO = 45; // Límite de inclinación en grados
+
+        // Variables de estado del juego
+        let tiempoRestante = TIEMPO_INICIAL;
+        let jugando = false;
+        let anguloBarra = -45; // En grados
+        let posicionXPelota = (LONGITUD_BARRA / 2) - 5; // Relativo al centro de la barra (a 5px del borde derecho)
+        let velocidadPelota = 0;
+        let ultimoTiempo = 0;
+        let idAnimacion = null;
+
+        // Registro de teclas
+        const teclas = {
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+
+        // Diseños ASCII
+        const ASCII_FELIZ = `
+    .-''''''-.
+  .'          '.
+ /   O      O   \\
+:                :
+|                |
+: ',          ,' :
+ \\  '-......-'  /
+  '.          .'
+    '-......-'
+        `;
+
+        const ASCII_TRISTE = `
+    .-''''''-.
+  .'          '.
+ /   O      O   \\
+:                :
+|                |
+:  .-''''''-.  :
+ \\ '          ' /
+  '.          .'
+    '-......-'
+        `;
+
+        // Eventos de botones
+        btnEntrar.addEventListener('click', iniciarCaptcha);
+        btnReiniciar.addEventListener('click', iniciarCaptcha);
+
+        // Control de teclado
+        window.addEventListener('keydown', (e) => {
+            if (teclas.hasOwnProperty(e.key)) {
+                teclas[e.key] = true;
+                // Prevenir el scroll por defecto si estamos jugando
+                if (jugando) e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (teclas.hasOwnProperty(e.key)) {
+                teclas[e.key] = false;
+            }
+        });
+
+        function iniciarCaptcha() {
+            // Configurar vistas
+            estadoInicio.hidden = true;
+            estadoResultado.hidden = true;
+            estadoCaptcha.hidden = false;
+
+            // Restablecer variables físicas
+            tiempoRestante = TIEMPO_INICIAL;
+            anguloBarra = -45;
+            posicionXPelota = (LONGITUD_BARRA / 2) - 5;
+            velocidadPelota = 0;
+            teclas.ArrowLeft = false;
+            teclas.ArrowRight = false;
+            jugando = true;
+
+            // Iniciar bucle de juego
+            ultimoTiempo = performance.now();
+            if (idAnimacion) cancelAnimationFrame(idAnimacion);
+            idAnimacion = requestAnimationFrame(buclePrincipal);
+        }
+
+        function finalizarCaptcha(exito) {
+            jugando = false;
+            cancelAnimationFrame(idAnimacion);
+            
+            estadoCaptcha.hidden = true;
+            estadoResultado.hidden = false;
+
+            if (exito) {
+                arteAscii.textContent = ASCII_FELIZ;
+                mensajeResultado.textContent = "Verificación exitosa. Eres humano.";
+                btnReiniciar.hidden = true; // Opcional: no permitir reiniciar si ya pasó
+            } else {
+                arteAscii.textContent = ASCII_TRISTE;
+                mensajeResultado.textContent = "Has fallado. Se ha detectado comportamiento robótico (o poca paciencia).";
+                btnReiniciar.hidden = false;
+            }
+        }
+
+        function actualizarFisicas(deltaTiempo) {
+            // Actualizar reloj
+            tiempoRestante -= deltaTiempo;
+            if (tiempoRestante <= 0) {
+                salidaContador.textContent = "0.00";
+                finalizarCaptcha(true);
+                return;
+            }
+            salidaContador.textContent = Math.max(0, tiempoRestante).toFixed(2);
+
+            // Actualizar inclinación de la barra basado en las flechas
+            // Flecha izquierda levanta lado izquierdo -> rotación horaria -> ángulo positivo
+            // Flecha derecha levanta lado derecho -> rotación antihoraria -> ángulo negativo
+            if (teclas.ArrowLeft) anguloBarra += VELOCIDAD_ROTACION * deltaTiempo;
+            if (teclas.ArrowRight) anguloBarra -= VELOCIDAD_ROTACION * deltaTiempo;
+
+            // Limitar el ángulo para que no dé vueltas completas
+            if (anguloBarra > ANGULO_MAXIMO) anguloBarra = ANGULO_MAXIMO;
+            if (anguloBarra < -ANGULO_MAXIMO) anguloBarra = -ANGULO_MAXIMO;
+
+            // Calcular físicas de la pelota
+            const anguloRadianes = anguloBarra * (Math.PI / 180);
+            
+            // La aceleración en el plano inclinado es g * sen(θ)
+            const aceleracion = GRAVEDAD * Math.sin(anguloRadianes);
+            
+            velocidadPelota += aceleracion * deltaTiempo;
+            velocidadPelota *= FRICCION; // Aplicar fricción para estabilizar un poco
+            posicionXPelota += velocidadPelota * deltaTiempo;
+
+            // Verificar si la pelota se cayó de la barra
+            const limiteBarra = LONGITUD_BARRA / 2;
+            if (posicionXPelota < -limiteBarra || posicionXPelota > limiteBarra) {
+                finalizarCaptcha(false);
+            }
+        }
+
+        function renderizarEscena() {
+            // Limpiar lienzo
+            ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+            
+            ctx.save();
+            // Trasladar el origen al centro del lienzo
+            ctx.translate(lienzo.width / 2, lienzo.height / 2);
+            
+            // Rotar el contexto entero según el ángulo de la barra
+            ctx.rotate(anguloBarra * (Math.PI / 180));
+
+            // Dibujar la barra
+            ctx.fillStyle = '#2c3e50';
+            const grosorBarra = 10;
+            ctx.fillRect(-LONGITUD_BARRA / 2, -grosorBarra / 2, LONGITUD_BARRA, grosorBarra);
+
+            // Dibujar la pelota (su posición Y es arriba de la barra)
+            ctx.beginPath();
+            ctx.arc(posicionXPelota, -grosorBarra / 2 - RADIO_PELOTA, RADIO_PELOTA, 0, Math.PI * 2);
+            ctx.fillStyle = '#e74c3c';
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.restore();
+        }
+
+        function buclePrincipal(tiempoActual) {
+            if (!jugando) return;
+
+            // Calcular diferencia de tiempo en segundos
+            const deltaTiempo = (tiempoActual - ultimoTiempo) / 1000;
+            ultimoTiempo = tiempoActual;
+
+            // Limitar deltaTiempo para evitar saltos locos si la pestaña pierde el foco
+            if (deltaTiempo < 0.1) {
+                actualizarFisicas(deltaTiempo);
+                renderizarEscena();
+            }
+
+            if (jugando) {
+                idAnimacion = requestAnimationFrame(buclePrincipal);
+            }
+        }
+    </script>
+</body>
+</html>

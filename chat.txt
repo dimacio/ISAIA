@@ -1,0 +1,17 @@
+- quiero hacer el peor captchat posible, mi idea básica es que uno tiene que evitar que se caiga una circulo apoyado en una barra. Quiero un solo implementación en un solo archivo que contenga html, ccs y js. Necesito tres estados: uno en el que solo hay un botón que dice entrar, el segundo en el que se presenta el capchat (tiene que poder detectar las flechas izquierda para inclinar el lado izquierda hacia arriba y el flecha de la derecha para inclinar el lado derecho hacia arriba) tiene que tener un texto en un section debajo del div que contiene el captcha interactivo en si mismo y arriba del div un contador que baja progresivamente desde 60, el tercer estado depende de si pudiste mantener la pelota sin que se caiga durante los 60 segundos (si lo lograste debería aparecer un smile feliz hecho con ascii art y sino un simile triste). Usa tag semanticos en lo posible reduciendo el uso de div a casos estrictamente necesarios.
+
+El Peor Captcha
+6 may, 21:57
+
+- modifica posicionXPelota para colocar la pelota en el a 5 pixeles del extremo derecho
+
+- He modificado el Canvas para que la pelota inicie a 5 píxeles del extremo derecho de la barra, actualizando la variable posicionXPelota tanto en su declaración inicial como en la función que reinicia el estado del captcha.
+
+- El código ha sido actualizado.
+
+-ahora ajusta anguloBarra para que comience a 45 grados
+
+- Actualizando el Canvas para que el anguloBarra inicie a 45 grados.
+
+- 45 grados para el otro lado
+
