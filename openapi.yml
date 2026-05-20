@@ -1,0 +1,307 @@
+openapi: 3.1.0
+info:
+  title: API de Calendario
+  description: API para la gestión de eventos y recordatorios de un calendario.
+  version: 1.0.0
+servers:
+  - url: https://api.ejemplo.com/v1
+    description: Servidor de producción
+  - url: http://localhost:8080/v1
+    description: Servidor de desarrollo local
+paths:
+  /agenta/eventos:
+    get:
+      summary: Listar eventos
+      description: Obtiene una lista de eventos, opcionalmente filtrados por un rango de fechas.
+      operationId: getEventos
+      parameters:
+        - name: fecha_inicio
+          in: query
+          description: Filtra eventos que comienzan a partir de esta fecha (formato ISO 8601).
+          schema:
+            type: string
+            format: date-time
+        - name: fecha_fin
+          in: query
+          description: Filtra eventos que comienzan antes de esta fecha (formato ISO 8601).
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Lista de eventos obtenida con éxito.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Evento'
+        '400':
+          $ref: '#/components/responses/ErrorBadRequest'
+    post:
+      summary: Crear un nuevo evento
+      description: Crea un nuevo evento en el calendario.
+      operationId: createEvento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventoInput'
+      responses:
+        '201':
+          description: Evento creado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evento'
+        '400':
+          $ref: '#/components/responses/ErrorBadRequest'
+        '409':
+          description: Conflicto - Ya existe un evento en ese horario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /agenta/eventos/{id_evento}:
+    parameters:
+      - name: id_evento
+        in: path
+        required: true
+        description: ID único del evento.
+        schema:
+          type: string
+    put:
+      summary: Actualizar un evento
+      description: Actualiza los detalles de un evento existente.
+      operationId: updateEvento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventoInput'
+      responses:
+        '200':
+          description: Evento actualizado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evento'
+        '400':
+          $ref: '#/components/responses/ErrorBadRequest'
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+        '409':
+          description: Conflicto - El nuevo horario entra en conflicto con otro evento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Eliminar un evento
+      description: Elimina un evento del calendario.
+      operationId: deleteEvento
+      responses:
+        '204':
+          description: Evento eliminado con éxito. No hay contenido en la respuesta.
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+  /agenta/eventos/{id_evento}/recordatorios:
+    parameters:
+      - name: id_evento
+        in: path
+        required: true
+        description: ID único del evento asociado.
+        schema:
+          type: string
+    get:
+      summary: Listar recordatorios de un evento
+      description: Obtiene la lista de recordatorios para un evento específico.
+      operationId: getRecordatorios
+      responses:
+        '200':
+          description: Lista de recordatorios obtenida con éxito.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recordatorio'
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+    post:
+      summary: Crear un recordatorio
+      description: Añade un nuevo recordatorio a un evento existente.
+      operationId: createRecordatorio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordatorioInput'
+      responses:
+        '201':
+          description: Recordatorio creado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recordatorio'
+        '400':
+          $ref: '#/components/responses/ErrorBadRequest'
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+  /agenta/eventos/{id_evento}/recordatorios/{id_recordatorio}:
+    parameters:
+      - name: id_evento
+        in: path
+        required: true
+        description: ID único del evento.
+        schema:
+          type: string
+      - name: id_recordatorio
+        in: path
+        required: true
+        description: ID único del recordatorio.
+        schema:
+          type: string
+    put:
+      summary: Actualizar un recordatorio
+      description: Modifica los detalles de un recordatorio existente.
+      operationId: updateRecordatorio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordatorioInput'
+      responses:
+        '200':
+          description: Recordatorio actualizado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recordatorio'
+        '400':
+          $ref: '#/components/responses/ErrorBadRequest'
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+    delete:
+      summary: Eliminar un recordatorio
+      description: Elimina un recordatorio de un evento.
+      operationId: deleteRecordatorio
+      responses:
+        '204':
+          description: Recordatorio eliminado con éxito.
+        '404':
+          $ref: '#/components/responses/ErrorNotFound'
+components:
+  schemas:
+    Evento:
+      type: object
+      required:
+        - id
+        - titulo
+        - fecha_hora_inicio
+      properties:
+        id:
+          type: string
+          description: Identificador único del evento.
+          example: evt_12345
+        titulo:
+          type: string
+          description: Título o nombre del evento.
+          example: Reunión de diseño de API
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+          description: Fecha y hora de inicio del evento en formato ISO 8601.
+          example: '2026-05-25T10:00:00Z'
+        duracion_horas:
+          type: number
+          format: float
+          description: Duración del evento en horas. Es opcional.
+          example: 1.5
+    EventoInput:
+      type: object
+      required:
+        - titulo
+        - fecha_hora_inicio
+      properties:
+        titulo:
+          type: string
+          example: Reunión de diseño de API
+        fecha_hora_inicio:
+          type: string
+          format: date-time
+          example: '2026-05-25T10:00:00Z'
+        duracion_horas:
+          type: number
+          format: float
+          example: 1.5
+    Recordatorio:
+      type: object
+      required:
+        - id
+        - tiempo_previo
+        - unidad_tiempo
+        - evento_id
+      properties:
+        id:
+          type: string
+          description: Identificador único del recordatorio.
+          example: rec_67890
+        tiempo_previo:
+          type: integer
+          description: Cantidad de tiempo de anticipación para el recordatorio.
+          example: 15
+        unidad_tiempo:
+          type: string
+          enum:
+            - minutos
+            - horas
+          description: Unidad de medida para el tiempo previo (minutos o horas).
+          example: minutos
+        evento_id:
+          type: string
+          description: ID del evento al que pertenece este recordatorio.
+          example: evt_12345
+    RecordatorioInput:
+      type: object
+      required:
+        - tiempo_previo
+        - unidad_tiempo
+      properties:
+        tiempo_previo:
+          type: integer
+          example: 15
+        unidad_tiempo:
+          type: string
+          enum:
+            - minutos
+            - horas
+          example: minutos
+    ErrorResponse:
+      type: object
+      properties:
+        codigo:
+          type: integer
+          description: Código de estado HTTP o código interno de error.
+          example: 400
+        mensaje:
+          type: string
+          description: Mensaje descriptivo del error.
+          example: Petición inválida. Faltan campos requeridos.
+  responses:
+    ErrorBadRequest:
+      description: Solicitud incorrecta (Bad Request). Validaciones fallidas o formato incorrecto.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ErrorNotFound:
+      description: Recurso no encontrado (Not Found). El ID del evento o recordatorio no existe.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,26 @@
+Ususario:
+Necesito un openapi.yaml (3.1) para una api de calendario:
+
+Recursos:
+ Evento {id, título, fecha_hora_inicio (ISO), duración_horas? (float)}
+ Recordatorio {id, tiempo_previo (integer), unidad_tiempo (minutos o horas, evento_id)}
+
+Endpoints:
+ GET /agenta/eventos (Parámetros (Query): fecha_inicio, fecha_fin (ISO))
+ POST /agenta/eventos
+ PUT /agenta/eventos/{id_evento} (201/400/409 conflicto de disponibilidad)
+ DELETE /agenta/eventos/{id_evento}
+
+Recordatorios:
+ GET /agenta/eventos/{id_evento}/recordatorios
+POST /agenta/eventos/{id_evento}/recordatorios
+POST /agenta/eventos/{id_evento}/recordatorios
+ 
+ Respuesta:
+ (Gemini respondio con un doc que tenía un formato incorrecto porque tomaba los markups como formato)
+
+ Usuario:
+ quiero que generes el código directamente para poder editarlo, lo abriste erroneamente como documento.
+
+ Respuesta:
+  (Gemini devolvió el archivo yaml funcional)

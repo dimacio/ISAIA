@@ -4,9 +4,16 @@ Entrega para: **Ingeniería de Software Asistida por Inteligencia Artificial** |
 
 ## Descripción
 
-Un captcha interactivo que requiere mantener una pelota en equilibrio sobre una barra inclinada durante 60 segundos. Implementado en HTML, CSS y JavaScript.
+Proyecto con dos entregas principales:
+
+1. Un captcha interactivo que requiere mantener una pelota en equilibrio sobre una barra inclinada durante 60 segundos.
+2. Una API de calendario modelada en OpenAPI y el chat de diseño usado para entender el esquema REST.
+
+La segunda entrega consiste en `openapi.yml` y `chat_API_calendario.txt`. En esta parte del trabajo se usó una charla previa con Gemini para entender mejor cómo diseñar una API REST, tomando esta API de calendario como ejemplo práctico. Con ese trabajo previo pude armar un prompt ordenado pude obtener la api en un solo paso, si no cuento el intento fallido de visualizarlo en Canvas.
 
 ## Conversación con IA
+
+### Captcha
 
 🧑 **Usuario:** Quiero hacer el peor captcha posible. La idea básica es que uno tiene que evitar que se caiga un círculo apoyado en una barra. Quiero una sola implementación en un solo archivo que contenga HTML, CSS y JS.
 
@@ -33,30 +40,49 @@ Usa tags semánticos y reduce divs al mínimo.
 
 ---
 
+### API de Calendario
+
+En la segunda entrega se diseñó una API REST para calendario usando OpenAPI 3.1. La idea fue modelar las siguientes entidades:
+
+- `Evento`: id, título, fecha_hora_inicio (ISO), duración_horas (opcional)
+- `Recordatorio`: id, tiempo_previo, unidad_tiempo (minutos u horas), evento_id
+
+Endpoints incluidos:
+
+- `GET /agenta/eventos`
+- `POST /agenta/eventos`
+- `PUT /agenta/eventos/{id_evento}`
+- `DELETE /agenta/eventos/{id_evento}`
+- `GET /agenta/eventos/{id_evento}/recordatorios`
+- `POST /agenta/eventos/{id_evento}/recordatorios`
+- `PUT /agenta/eventos/{id_evento}/recordatorios/{id_recordatorio}`
+- `DELETE /agenta/eventos/{id_evento}/recordatorios/{id_recordatorio}`
+
+
+
+---
+
 ## Características
 
-- **Tres estados:** Inicio → Juego → Resultado
-- **Control:** Flechas izquierda/derecha para inclinar la barra
-- **Física realista:** Gravedad, fricción y detección de colisiones
-- **HTML5 semántico:** Uso de `<main>`, `<section>`, `<header>`, `<figure>`, `<output>`
-- **Responsivo:** Diseño adaptable con CSS variables
+- **Dos entregas:** Captcha interactivo + API de calendario
+- **Especificación OpenAPI 3.1:** Incluye schemas, request bodies y respuestas de error
+- **Conversación de diseño:** Registro del intercambio con IA para la segunda entrega
+- **Formato compatible:** `openapi.yml`
 
 ---
 
 ## Cómo Usar
 
-1. Abre `captcha.html` en el navegador
-2. Haz clic en **"Entrar"**
-3. Usa **flechas del teclado** para inclinar la barra:
-   - Izquierda: levanta lado izquierdo
-   - Derecha: levanta lado derecho
-4. Mantén la pelota 60 segundos
-5. Resultado: ✓ sonrisa si ganas, ✗ tristeza si pierdes
+1. Abre `captcha.html` en el navegador para probar el captcha.
+2. Prueba `openapi.yml` en Swagger o una herramienta compatible con OpenAPI para validar la especificación de la API de calendario.
+3. Consulta `chat_API_calendario.txt` para el diálogo de apoyo utilizado en el diseño.
 
 ---
 
 ## Archivos
 
-- `captcha.html` - Código funcional (HTML + CSS + JS)
-- `chat.txt` - Diálogo con IA
+- `captcha.html` - Código funcional del captcha (HTML + CSS + JS)
+- `chat_captcha.txt` - Diálogo del primer proyecto de captcha
+- `openapi.yml` - Especificación OpenAPI de la API de calendario
+- `chat_API_calendario.txt` - Diálogo con Gemini para el diseño de la API de calendario
 - `README.md` - Este documento
